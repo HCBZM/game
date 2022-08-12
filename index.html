@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>index</title>
+    <style>
+        canvas {border: 1px solid black;}
+    </style>
+    <script src="./util.js"></script>
+</head>
+<body>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        let width = canvas.width;
+        let height = canvas.height;
+        let ctx = canvas.getContext('2d');
+        
+
+        function makePoint (x, y) {
+            return {x, y};
+        }
+        
+        class Douzi {
+            fillStyle = 'red';
+            storkerStyle = 'black';
+            constructor (radius, angle = 30) {
+                this.radius = radius;
+                this.getAngle = hcb.nextNumber_hp(angle, 1, -1);
+            }
+
+            draw (ctx, point) {
+                ctx.fillStyle = this.fillStyle;
+                ctx.storkerStyle = this.storkerStyle;
+                let angle = this.getAngle();
+                ctx.beginPath();
+                ctx.moveTo(point.x, point.y);
+                ctx.arc(point.x, point.y, this.radius, hcb.radian(-angle), hcb.radian(angle), true);
+                ctx.lineTo(point.x, point.y);
+                ctx.stroke();
+                ctx.fill();
+            }
+
+            clear (ctx, point) {
+                ctx.clearRect(point.x - this.radius - 1, point.y - this.radius - 1, 2 * this.radius + 2, 2 * this.radius + 2);
+            }
+        }
+                
+        // 
+        class World {
+            views = new Set;
+            operates = new Set;
+            constructor () {
+            }
+            
+            launch () {
+                let actions = () => {
+                    if (this.operates.size)
+                        this.operates.forEach(function (v) {v()});
+                    if (this.views.size)
+                        this.views.forEach(function (v) {v()});
+                    go();
+                }
+                let go = () => {
+                    requestAnimationFrame(actions);
+                }
+                go();
+            }
+            stop () {
+                
+            }
+        }
+
+        //
+        class Player {
+            normalSpeed = 1;
+            speed = 1;
+            direction = 'none';
+            constructor (point, aspect) {
+                this.point = point;
+                this.prevPoint = point;
+                this.aspect = aspect;
+            }
+
+            getSpeed () {
+                this.speed;
+            }
+            setSpeed (value) {
+                this.speed = value;
+            }
+
+            setPoint (p) {
+                this.aspect.clear(ctx, this.point);
+                this.prevPoint = this.point;
+                this.point = p;
+            }
+            
+            setDirection (d) {
+                this.direction = d;
+            }
+        }
+
+
+        // main
+        let wo = new Player(makePoint(100, 100), new Douzi(20));
+        let world = new World();
+        world.views.add(function () {
+            let aspect = wo.aspect;
+            aspect.clear(ctx, wo.point);
+            aspect.draw(ctx, wo.point);
+        });
+        world.launch();
+        world.operates.add(function () {
+            wo.setPoint(makeNewPoint(wo.direction, wo.speed, wo.point));
+        })
+
+
+        function makeNewPoint(direction, speed, point) {
+            let x = point.x;
+            let y = point.y;
+            if (direction === 'none') return point;
+            if (direction === 'left') {
+                x -= speed;
+            } else if (direction === 'right') {
+                x += speed;
+            } else if (direction === 'top') {
+                y -= speed;
+            } else if (direction === 'bottom')  {
+                y += speed;
+            }
+            return makePoint(x, y);
+        }
+
+
+
+        // 键盘操作
+        class KeyTable {
+            data = new Map;
+            constructor () {
+
+            }
+            
+            addOp (key, op) {
+                if (typeof op !== 'function') return console.error('operation must be function! -- KEY-TABLE', op);
+                let ops = this.data.get(key);
+                if (ops === undefined) {
+                    let set = new Set;
+                    set.add(op);
+                    this.data.set(key, set);
+                    return;
+                }
+                ops.add(op);
+            }
+
+            getOp (key) {
+                let ops = this.data.get(key);
+                if (ops === undefined) return false;
+                return function () {
+                    ops.forEach(function (cur) {
+                        cur();
+                    })
+                }   
+            }
+        }
+
+        let keyTable = new KeyTable;
+
+        document.addEventListener('keydown', event => {
+            let keyName = event.key;
+            let op = keyTable.getOp(keyName);
+            if (op) op();
+        })
+
+        keyTable.addOp('ArrowUp', function () {
+            wo.setDirection('top');
+        });
+        keyTable.addOp('ArrowDown', function () {
+            wo.setDirection('bottom');
+        });
+        keyTable.addOp('ArrowLeft', function () {
+            wo.setDirection('left');
+        });
+        keyTable.addOp('ArrowRight', function () {
+            wo.setDirection('right');
+        });
+        keyTable.addOp('s', function () {
+            wo.setDirection('none');
+        });
+    </script>
+</body>
+</html>
